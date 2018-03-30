@@ -9,6 +9,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class NettyServer implements Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyServer.class);
 
@@ -18,6 +21,9 @@ public class NettyServer implements Server {
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
+
+    protected Map<String, Object> providers = new HashMap<>();
+
 
     public NettyServer() {
     }
@@ -43,7 +49,7 @@ public class NettyServer implements Server {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast("decoder", new NettyDecoder());
                         pipeline.addLast("encoder", new NettyEncoder());
-                        pipeline.addLast("handler", new NettyServerChannelHandler());
+                        pipeline.addLast("handler", new NettyServerChannelHandler(providers));
                     }
                 });
 
@@ -72,5 +78,14 @@ public class NettyServer implements Server {
         } catch (Exception e) {
             LOGGER.error("NettyServer close Error: port={}", port, e);
         }
+    }
+
+    public NettyServer addService(String interfaceName, Object serviceBean) {
+        if (!providers.containsKey(interfaceName)) {
+            LOGGER.info("Loading service: {}", interfaceName);
+            providers.put(interfaceName, serviceBean);
+        }
+
+        return this;
     }
 }
